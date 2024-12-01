@@ -40,6 +40,6 @@ public class ServicioUsuario implements UserDetailsService {
         Usuario usuario = repositorioUsuario.findByEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException("Usuario no encontrado: " + email));
 
-        return usuario; // El modelo `Usuario` ya implementa `UserDetails`
+        return usuario;
     }
 }

@@ -23,17 +23,20 @@ public class ServicioImagen {
     private String uploadDir;
 
     public Imagen guardarImagen(MultipartFile archivo) throws IOException {
-        // Crear una nueva entidad Imagen
         Imagen imagen = new Imagen();
-        imagen.setNombre(archivo.getOriginalFilename());
-        imagen.setDatos(archivo.getBytes()); // Guardar los bytes del archivo (opcional, depende de tu implementación)
-        imagen.setTipo(archivo.getContentType());
 
-        // Aquí podrías guardar la imagen en un almacenamiento externo o en base de datos
-        // imagenRepositorio.save(imagen);
+        String nombreArchivo = System.currentTimeMillis() + "_" + archivo.getOriginalFilename();
+        String ruta = "uploads/" + nombreArchivo;
+
+        Path destino = Paths.get(ruta);
+        Files.createDirectories(destino.getParent());
+        Files.write(destino, archivo.getBytes());
+
+        imagen.setRuta(ruta);
 
         return imagen;
     }
+
 
     public void eliminarImagen(String nombreArchivo) throws IOException {
         Path rutaCompleta = Paths.get(uploadDir, nombreArchivo);

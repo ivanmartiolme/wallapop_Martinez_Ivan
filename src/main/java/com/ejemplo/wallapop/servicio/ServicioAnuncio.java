@@ -7,7 +7,9 @@ import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 @Service
 public class ServicioAnuncio {
@@ -17,16 +19,10 @@ public class ServicioAnuncio {
 
     @Transactional
     public Anuncio guardarAnuncio(Anuncio anuncio) {
-        System.out.println("Intentando guardar anuncio en la base de datos");
-        try {
-            Anuncio anuncioGuardado = repositorioAnuncio.save(anuncio);
-            System.out.println("Anuncio guardado con éxito. ID: " + anuncioGuardado.getId());
-            return anuncioGuardado;
-        } catch (Exception e) {
-            System.err.println("Error al guardar el anuncio: " + e.getMessage());
-            e.printStackTrace();
-            throw e;
-        }
+        System.out.println("Intentando guardar anuncio: " + anuncio);
+        Anuncio anuncioGuardado = repositorioAnuncio.save(anuncio);
+        System.out.println("Anuncio guardado con éxito. ID: " + anuncioGuardado.getId());
+        return anuncioGuardado;
     }
 
     public Page<Anuncio> obtenerTodosLosAnuncios(Pageable pageable) {
@@ -37,14 +33,9 @@ public class ServicioAnuncio {
         return repositorioAnuncio.findByUsuarioOrderByFechaCreacionDesc(usuario, pageable);
     }
 
-    /*public Anuncio guardarAnuncio(Anuncio anuncio) {
-        return repositorioAnuncio.save(anuncio);
-    }*/
-
-
     public Anuncio obtenerAnuncioPorId(Long id) {
         return repositorioAnuncio.findById(id)
-                .orElseThrow(() -> new RuntimeException("Anuncio no encontrado"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Anuncio no encontrado con id: " + id));
     }
 
     public void eliminarAnuncio(Anuncio anuncio) {

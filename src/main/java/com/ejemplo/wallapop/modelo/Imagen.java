@@ -15,8 +15,6 @@ public class Imagen {
     @JoinColumn(name = "anuncio_id")
     private Anuncio anuncio;
 
-    // Getters y setters
-
     public Long getId() {
         return id;
     }

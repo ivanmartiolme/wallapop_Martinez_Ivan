@@ -51,8 +51,6 @@ public class Anuncio {
         imagen.setAnuncio(null);
     }
 
-    // Getters y setters
-
     public Long getId() {
         return id;
     }

@@ -19,6 +19,7 @@ import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.io.IOException;
 import java.util.List;
@@ -53,31 +54,32 @@ public class ControladorAnuncio {
     public String crearAnuncio(@Valid @ModelAttribute Anuncio anuncio,
                                BindingResult result,
                                @RequestParam("imagenes") List<MultipartFile> imagenes,
-                               Authentication authentication) throws IOException {
-
+                               Authentication authentication,
+                               Model model) throws IOException {
         if (result.hasErrors()) {
-            System.out.println("Errores de validación: " + result.getAllErrors());
             return "formulario-anuncio";
         }
-
-        // Obtener el usuario autenticado
         Usuario usuario = servicioUsuario.obtenerUsuarioPorEmail(authentication.getName());
+        if (usuario == null) {
+            return "redirect:/error";
+        }
         anuncio.setUsuario(usuario);
 
-        // Convertir MultipartFile a Imagen y agregar al anuncio
-        for (MultipartFile archivo : imagenes) {
-            if (!archivo.isEmpty()) {
-                Imagen nuevaImagen = servicioImagen.guardarImagen(archivo); // Lógica para guardar la imagen en base de datos o almacenamiento
-                anuncio.addImagen(nuevaImagen);
+        try {
+            for (MultipartFile archivo : imagenes) {
+                if (!archivo.isEmpty()) {
+                    Imagen nuevaImagen = servicioImagen.guardarImagen(archivo);
+                    anuncio.addImagen(nuevaImagen);
+                }
             }
+
+            servicioAnuncio.guardarAnuncio(anuncio);
+            return "redirect:/anuncios/mis-anuncios";
+        } catch (Exception e) {
+            model.addAttribute("error", "Ocurrió un error al guardar el anuncio. Por favor, inténtelo de nuevo.");
+            return "formulario-anuncio";
         }
-
-        // Guardar el anuncio con las imágenes
-        servicioAnuncio.guardarAnuncio(anuncio);
-
-        return "redirect:/anuncios/mis-anuncios";
     }
-
 
     @GetMapping("/editar/{id}")
     public String mostrarFormularioEditarAnuncio(@PathVariable Long id, Model model, Authentication authentication) {
@@ -114,7 +116,7 @@ public class ControladorAnuncio {
         }
 
         servicioAnuncio.guardarAnuncio(anuncioExistente);
-        return "redirect:/anuncios";
+        return "redirect:/";
     }
 
     @SneakyThrows
@@ -122,17 +124,14 @@ public class ControladorAnuncio {
     public String borrarAnuncio(@PathVariable Long id, Authentication authentication) {
         Anuncio anuncio = servicioAnuncio.obtenerAnuncioPorId(id);
 
-        // Validar que el usuario autenticado sea el propietario del anuncio
         if (!anuncio.getUsuario().getEmail().equals(authentication.getName())) {
             return "redirect:/anuncios";
         }
 
-        // Eliminar imágenes asociadas
         for (Imagen imagen : anuncio.getImagenes()) {
             servicioImagen.eliminarImagen(imagen.getRuta());
         }
 
-        // Eliminar el anuncio
         servicioAnuncio.eliminarAnuncio(anuncio);
 
         return "redirect:/anuncios";
@@ -141,9 +140,17 @@ public class ControladorAnuncio {
 
     @GetMapping("/ver/{id}")
     public String verAnuncio(@PathVariable Long id, Model model) {
-        Anuncio anuncio = servicioAnuncio.obtenerAnuncioPorId(id);
-        model.addAttribute("anuncio", anuncio);
-        return "ver-anuncio";
+        try {
+            Anuncio anuncio = servicioAnuncio.obtenerAnuncioPorId(id);
+            if (anuncio.getUsuario() == null) {
+                anuncio.setUsuario(new Usuario());
+            }
+            model.addAttribute("anuncio", anuncio);
+            return "ver-anuncio";
+        } catch (Exception e) {
+            model.addAttribute("error", "No se pudo encontrar el anuncio: " + e.getMessage());
+            return "error";
+        }
     }
 
     @GetMapping("/mis-anuncios")
@@ -153,6 +160,4 @@ public class ControladorAnuncio {
         model.addAttribute("anuncios", anuncios);
         return "mis-anuncios";
     }
-
-
 }

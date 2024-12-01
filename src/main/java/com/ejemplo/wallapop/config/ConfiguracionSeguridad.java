@@ -31,7 +31,7 @@ public class ConfiguracionSeguridad {
     @Autowired
     public void configureGlobal(AuthenticationManagerBuilder auth) throws Exception {
         auth
-                .userDetailsService(servicioUsuario) // Asegúrate de usar `ServicioUsuario` aquí
+                .userDetailsService(servicioUsuario)
                 .passwordEncoder(passwordEncoder());
     }
 
